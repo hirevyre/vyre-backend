@@ -35,16 +35,19 @@ exports.getCurrentUser = async (req, res) => {
  */
 exports.updateCurrentUser = async (req, res) => {
   try {
-    const { firstName, lastName, position, department, avatar } = req.body;
+    const { firstName, lastName, position, department, avatar, phoneNumber, location, bio } = req.body;
     
-    console.log(`Updating user profile for ID: ${req.user.id}`);
+    console.log(`Updating user profile for ID: ${req.user.id}`, req.body);
+    
+    const allowedFields = ['firstName', 'lastName', 'position', 'department', 
+                           'avatar', 'phoneNumber', 'location', 'bio'];
     
     const updateFields = {};
-    if (firstName !== undefined) updateFields.firstName = firstName;
-    if (lastName !== undefined) updateFields.lastName = lastName;
-    if (position !== undefined) updateFields.position = position;
-    if (department !== undefined) updateFields.department = department;
-    if (avatar !== undefined) updateFields.avatar = avatar;
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updateFields[field] = req.body[field];
+      }
+    });
     
     const user = await User.findByIdAndUpdate(
       req.user.id,

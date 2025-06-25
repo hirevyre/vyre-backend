@@ -26,7 +26,46 @@ const app = express();
 // Middleware
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+
+// Add request body logging for debugging
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  res.send = function(data) {
+    console.log(`[DEBUG] Response for ${req.method} ${req.url}:`, data);
+    originalSend.call(this, data);
+  };
+  
+  console.log(`[DEBUG] ${req.method} ${req.url} Request Body:`, req.body);
+  console.log(`[DEBUG] ${req.method} ${req.url} Content-Type:`, req.headers['content-type']);
+  next();
+});
+
+// JSON parsing with custom error handling
+app.use(express.json({
+  verify: (req, res, buf, encoding) => {
+    // Store raw body for potential use in webhooks or signature verification
+    req.rawBody = buf.toString();
+  },
+  reviver: (key, value) => {
+    // You can add custom JSON reviver logic here if needed
+    return value;
+  }
+}));
+
+// JSON parsing error handler
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error('JSON Parse Error:', err.message);
+    return res.status(400).json({
+      status: 'error',
+      message: 'Invalid JSON payload',
+      details: 'The request contains invalid JSON. Please check your request format.',
+      code: 'INVALID_JSON'
+    });
+  }
+  next(err);
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
