@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "name": "vyre-api",
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/v1/(.*)",
+      "dest": "index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "index.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "regions": ["dub1", "iad1"],
+  "github": {
+    "silent": true
+  }
+}
