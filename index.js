@@ -25,55 +25,7 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-
-// Configure CORS for production and development
-const corsOptions = {
-  origin: function (origin, callback) {
-    console.log(`[CORS] Request from origin: ${origin}`);
-    console.log(`[CORS] Environment: ${process.env.NODE_ENV}`);
-    console.log(`[CORS] Frontend URL: ${process.env.FRONTEND_URL}`);
-    console.log(`[CORS] Admin Panel URL: ${process.env.ADMIN_PANEL_URL}`);
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      console.log('[CORS] No origin provided, allowing request');
-      return callback(null, true);
-    }
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001', 
-      'http://localhost:5173',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173',
-      process.env.FRONTEND_URL,
-      process.env.ADMIN_PANEL_URL
-    ].filter(Boolean); // Remove any undefined values
-
-    console.log(`[CORS] Allowed origins:`, allowedOrigins);
-
-    // In development, allow all origins
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[CORS] Development mode - allowing all origins');
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log(`[CORS] Origin ${origin} is allowed`);
-      callback(null, true);
-    } else {
-      console.error(`[CORS] Origin ${origin} is NOT allowed. Allowed origins:`, allowedOrigins);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  preflightContinue: false,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 
 // Add request body logging for debugging
 app.use((req, res, next) => {
@@ -85,8 +37,6 @@ app.use((req, res, next) => {
   
   console.log(`[DEBUG] ${req.method} ${req.url} Request Body:`, req.body);
   console.log(`[DEBUG] ${req.method} ${req.url} Content-Type:`, req.headers['content-type']);
-  console.log(`[DEBUG] ${req.method} ${req.url} Origin:`, req.headers.origin);
-  console.log(`[DEBUG] ${req.method} ${req.url} User-Agent:`, req.headers['user-agent']);
   next();
 });
 
@@ -140,19 +90,6 @@ app.use(`${API_BASE}/users`, userRoutes);
 app.use(`${API_BASE}/health`, healthRoutes); // Add health check routes
 app.use(`${API_BASE}/debug`, debugRoutes); // Add debug routes for troubleshooting
 app.use(`${API_BASE}/diagnostics`, diagnosticRoutes); // Add diagnostic routes for system testing
-
-// Debug route to check environment configuration (remove after fixing)
-app.get('/debug/env', (req, res) => {
-  res.json({
-    nodeEnv: process.env.NODE_ENV,
-    frontendUrl: process.env.FRONTEND_URL || 'Not set',
-    adminPanelUrl: process.env.ADMIN_PANEL_URL || 'Not set',
-    mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set',
-    accessTokenSecret: process.env.ACCESS_TOKEN_SECRET ? 'Set' : 'Not set',
-    port: process.env.PORT || 'Not set',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Root route
 app.get('/', (req, res) => {
