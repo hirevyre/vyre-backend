@@ -7,9 +7,12 @@ const responseUtils = require('../utils/responseUtils');
  */
 exports.getCompanySettings = async (req, res) => {
   try {
+    console.log(`Fetching company settings for company ID: ${req.user.companyId}`);
+    
     const company = await Company.findById(req.user.companyId);
     
     if (!company) {
+      console.log(`Company not found with ID: ${req.user.companyId}`);
       return responseUtils.error(res, 'Company not found', 404);
     }
     
@@ -23,7 +26,8 @@ exports.getCompanySettings = async (req, res) => {
       location: company.location
     };
     
-    return responseUtils.success(res, undefined, settings);
+    console.log(`Successfully retrieved company settings for: ${company.name}`);
+    return responseUtils.success(res, 'Company settings retrieved successfully', settings);
   } catch (error) {
     console.error('Get company settings error:', error);
     return responseUtils.error(res, 'Failed to get company settings', 500);

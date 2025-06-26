@@ -47,11 +47,15 @@ const UserSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: String,
-    trim: true
+    default: ''
+  },
+  location: {
+    type: String,
+    default: ''
   },
   bio: {
     type: String,
-    trim: true
+    default: ''
   },
   skills: [{
     type: String,

@@ -1,0 +1,253 @@
+{
+  "info": {
+    "name": "Vyre API - Company Settings",
+    "description": "Postman collection for Vyre company settings endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login to get access token and refresh token"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh-token"]
+            },
+            "description": "Get a new access token using the refresh token"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints for Vyre API"
+    },
+    {
+      "name": "Company Settings",
+      "item": [
+        {
+          "name": "Get Company Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/company",
+              "host": ["{{baseUrl}}"],
+              "path": ["settings", "company"]
+            },
+            "description": "Retrieve company settings"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Company Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"Acme Inc\",\n  \"logoUrl\": \"/uploads/acme-logo.svg\",\n  \"website\": \"https://acme.com\",\n  \"industry\": \"Technology\",\n  \"companySize\": \"51-200\",\n  \"description\": \"We are a leading technology company focused on innovation and excellence.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/company",
+              "host": ["{{baseUrl}}"],
+              "path": ["settings", "company"]
+            },
+            "description": "Update company settings (requires admin privileges)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Company information management endpoints"
+    },
+    {
+      "name": "Interview Preferences",
+      "item": [
+        {
+          "name": "Get Interview Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/interview-preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["settings", "interview-preferences"]
+            },
+            "description": "Retrieve interview preferences"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Interview Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailNotifications\": true,\n  \"autoScheduleInterviews\": true,\n  \"sendReminderEmails\": true,\n  \"reminderTime\": 12,\n  \"defaultInterviewDuration\": 60,\n  \"defaultQuestionBank\": [\n    \"Tell us about your experience with...\",\n    \"How would you handle...\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/interview-preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["settings", "interview-preferences"]
+            },
+            "description": "Update interview preferences"
+          },
+          "response": []
+        }
+      ],
+      "description": "Interview preferences management endpoints"
+    },
+    {
+      "name": "Notification Preferences",
+      "item": [
+        {
+          "name": "Get Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/notification-preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["settings", "notification-preferences"]
+            },
+            "description": "Retrieve notification preferences"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Notification Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": {\n    \"newApplicant\": true,\n    \"interviewScheduled\": false,\n    \"interviewCompleted\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings/notification-preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["settings", "notification-preferences"]
+            },
+            "description": "Update notification preferences"
+          },
+          "response": []
+        }
+      ],
+      "description": "Notification preferences management endpoints"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.vyre.io/v1",
+      "type": "string",
+      "description": "The base URL for the Vyre API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token for authentication"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT refresh token for getting new access tokens"
+    }
+  ]
+}

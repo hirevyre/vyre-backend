@@ -3,7 +3,7 @@ const Candidate = require('../models/Candidate');
 const Interview = require('../models/Interview');
 const Report = require('../models/Report');
 const responseUtils = require('../utils/responseUtils');
-
+const mongoose = require('mongoose');
 /**
  * Get dashboard analytics
  * @route GET /analytics/dashboard
@@ -258,3 +258,320 @@ exports.getJobAnalytics = async (req, res) => {
     return responseUtils.error(res, 'Failed to get job analytics', 500);
   }
 };
+
+/**
+ * Get activity summary for a specific period
+ * @route GET /analytics/activity-summary
+ */
+exports.getActivitySummary = async (req, res) => {
+  try {
+    const { period = 'month' } = req.query;
+    const userId = req.user.id;
+    const companyId = req.user.companyId;
+    
+    // Define the start date based on period
+    let startDate = new Date();
+    switch (period) {
+      case 'week':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'quarter':
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setMonth(startDate.getMonth() - 1); // Default to month
+    }
+    
+    // Get the job model to access jobs data
+    const Job = require('../models/Job');
+    const Candidate = require('../models/Candidate');
+    const Interview = require('../models/Interview');
+    const User = require('../models/User');
+    
+    // Gather data for activity summary
+    const [
+      newJobs,
+      newCandidates,
+      scheduledInterviews,
+      completedInterviews,
+      activeUsers,
+      // Daily activity breakdown
+      jobsData,
+      candidatesData,
+      interviewsData
+    ] = await Promise.all([
+      // Count of new jobs in period
+      Job.countDocuments({
+        companyId,
+        createdAt: { $gte: startDate }
+      }),
+      
+      // Count of new candidates in period
+      Candidate.countDocuments({
+        companyId,
+        createdAt: { $gte: startDate }
+      }),
+      
+      // Count of scheduled interviews in period
+      Interview.countDocuments({
+        companyId,
+        scheduledDate: { $gte: startDate },
+        status: 'scheduled'
+      }),
+      
+      // Count of completed interviews in period
+      Interview.countDocuments({
+        companyId,
+        completedDate: { $gte: startDate },
+        status: 'completed'
+      }),
+      
+      // Count of active users in period
+      User.countDocuments({
+        companyId,
+        lastActive: { $gte: startDate }
+      }),
+      
+      // Jobs created per day in the period
+      Job.aggregate([
+        {
+          $match: {
+            companyId: new mongoose.Types.ObjectId(companyId),
+            createdAt: { $gte: startDate }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { "_id": 1 }
+        }
+      ]),
+      
+      // Candidates added per day in the period
+      Candidate.aggregate([
+        {
+          $match: {
+            companyId: new mongoose.Types.ObjectId(companyId),
+            createdAt: { $gte: startDate }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { "_id": 1 }
+        }
+      ]),
+      
+      // Interviews scheduled per day in the period
+      Interview.aggregate([
+        {
+          $match: {
+            companyId: new mongoose.Types.ObjectId(companyId),
+            scheduledDate: { $gte: startDate }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$scheduledDate" } },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { "_id": 1 }
+        }
+      ])
+    ]);
+    
+    // Format the daily activity data
+    const dailyActivity = formatDailyActivityData(startDate, jobsData, candidatesData, interviewsData);
+    
+    return responseUtils.success(res, 'Activity summary retrieved successfully', {
+      summary: {
+        newJobs,
+        newCandidates,
+        scheduledInterviews,
+        completedInterviews,
+        activeUsers,
+        period
+      },
+      dailyActivity
+    });
+  } catch (error) {
+    console.error('Error getting activity summary:', error);
+    return responseUtils.error(res, 'Failed to retrieve activity summary', 500);
+  }
+};
+
+/**
+ * Get recruitment source effectiveness
+ * @route GET /analytics/source-effectiveness
+ */
+exports.getSourceEffectiveness = async (req, res) => {
+  try {
+    const { timeRange = '30' } = req.query; // Days
+    const userId = req.user.id;
+    const companyId = req.user.companyId;
+    
+    const daysAgo = parseInt(timeRange);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysAgo);
+    
+    const Candidate = require('../models/Candidate');
+    
+    // Aggregate candidates by source and count them
+    const sourceData = await Candidate.aggregate([
+      {
+        $match: {
+          companyId: new mongoose.Types.ObjectId(companyId),
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: "$source",
+          totalCandidates: { $sum: 1 },
+          interviewed: {
+            $sum: { $cond: [{ $gt: ["$interviewCount", 0] }, 1, 0] }
+          },
+          hired: {
+            $sum: { $cond: [{ $eq: ["$status", "hired"] }, 1, 0] }
+          },
+          rejected: {
+            $sum: { $cond: [{ $eq: ["$status", "rejected"] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $project: {
+          source: "$_id",
+          totalCandidates: 1,
+          interviewed: 1,
+          hired: 1,
+          rejected: 1,
+          interviewRate: { 
+            $round: [{ $multiply: [{ $divide: ["$interviewed", "$totalCandidates"] }, 100] }, 1] 
+          },
+          hireRate: { 
+            $round: [{ $multiply: [{ $divide: ["$hired", "$totalCandidates"] }, 100] }, 1] 
+          },
+          _id: 0
+        }
+      },
+      {
+        $sort: { totalCandidates: -1 }
+      }
+    ]);
+    
+    // Add default sources if none exist
+    const formattedSourceData = formatSourceData(sourceData);
+    
+    return responseUtils.success(res, 'Source effectiveness retrieved successfully', {
+      timeRange: parseInt(timeRange),
+      sources: formattedSourceData
+    });
+  } catch (error) {
+    console.error('Error getting source effectiveness:', error);
+    return responseUtils.error(res, 'Failed to retrieve source effectiveness', 500);
+  }
+};
+
+// Helper function to format daily activity data
+function formatDailyActivityData(startDate, jobsData, candidatesData, interviewsData) {
+  // Create a map of dates to ensure we have entries for every day
+  const dailyMap = {};
+  
+  const currentDate = new Date();
+  let day = new Date(startDate);
+  
+  // Initialize the map with all dates in the range
+  while (day <= currentDate) {
+    const dateStr = day.toISOString().split('T')[0];
+    dailyMap[dateStr] = {
+      date: dateStr,
+      jobs: 0,
+      candidates: 0,
+      interviews: 0
+    };
+    day.setDate(day.getDate() + 1);
+  }
+  
+  // Fill in actual job data
+  jobsData.forEach(item => {
+    if (dailyMap[item._id]) {
+      dailyMap[item._id].jobs = item.count;
+    }
+  });
+  
+  // Fill in actual candidate data
+  candidatesData.forEach(item => {
+    if (dailyMap[item._id]) {
+      dailyMap[item._id].candidates = item.count;
+    }
+  });
+  
+  // Fill in actual interview data
+  interviewsData.forEach(item => {
+    if (dailyMap[item._id]) {
+      dailyMap[item._id].interviews = item.count;
+    }
+  });
+  
+  // Convert map to array for response
+  return Object.values(dailyMap);
+}
+
+// Helper function to format source data
+function formatSourceData(sourceData) {
+  // If no sources found, add some default ones
+  if (sourceData.length === 0) {
+    return [
+      {
+        source: 'LinkedIn',
+        totalCandidates: 0,
+        interviewed: 0,
+        hired: 0,
+        rejected: 0,
+        interviewRate: 0,
+        hireRate: 0
+      },
+      {
+        source: 'Indeed',
+        totalCandidates: 0,
+        interviewed: 0,
+        hired: 0,
+        rejected: 0,
+        interviewRate: 0,
+        hireRate: 0
+      },
+      {
+        source: 'Referral',
+        totalCandidates: 0,
+        interviewed: 0,
+        hired: 0,
+        rejected: 0,
+        interviewRate: 0,
+        hireRate: 0
+      }
+    ];
+  }
+  
+  // Handle null or undefined source values
+  return sourceData.map(item => ({
+    ...item,
+    source: item.source || 'Direct Application'
+  }));
+}

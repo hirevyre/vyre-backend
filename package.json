@@ -6,7 +6,14 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate:user-fields": "node migrations/addUserFields.js",
+    "test:settings": "npx mocha tests/settings.test.js",
+    "docs:serve": "npx http-server ./docs -p 8080",
+    "api:endpoints": "node scripts/listEndpoints.js",
+    "postman:import": "node scripts/importPostman.js",
+    "docs:analytics": "npx marked -i docs/analytics-api-integration.md -o docs/analytics-api-integration.html && npx open-cli docs/analytics-api-integration.html",
+    "docs:analytics-troubleshoot": "npx marked -i docs/analytics-api-troubleshooting.md -o docs/analytics-api-troubleshooting.html && npx open-cli docs/analytics-api-troubleshooting.html"
   },
   "keywords": [],
   "author": "",

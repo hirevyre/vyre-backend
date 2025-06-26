@@ -21,6 +21,9 @@ router.put(
     body('position').optional().notEmpty().withMessage('Position cannot be empty'),
     body('department').optional().notEmpty().withMessage('Department cannot be empty'),
     body('avatar').optional().isURL().withMessage('Avatar must be a valid URL'),
+    body('phoneNumber').optional(),
+    body('location').optional(),
+    body('bio').optional().isLength({ max: 500 }).withMessage('Bio cannot exceed 500 characters'),
     validateRequest
   ],
   userController.updateCurrentUser

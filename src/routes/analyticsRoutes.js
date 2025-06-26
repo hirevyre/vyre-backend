@@ -1,31 +1,20 @@
 const express = require('express');
-const { param } = require('express-validator');
+const { auth } = require('../middlewares/authMiddleware');
 const analyticsController = require('../controllers/analyticsController');
-const { auth, authorize } = require('../middlewares/authMiddleware');
-const { validateRequest } = require('../middlewares/errorMiddleware');
 
 const router = express.Router();
 
 // Protect all analytics routes with auth middleware
 router.use(auth);
 
-// Get dashboard analytics route
-router.get('/dashboard', analyticsController.getDashboardAnalytics);
-
-// Get dashboard stats route
+// Dashboard stats
 router.get('/dashboard-stats', analyticsController.getDashboardStats);
 
-// Get recruitment analytics route
-router.get('/recruitment', analyticsController.getRecruitmentAnalytics);
+// Activity summary
+router.get('/activity-summary', analyticsController.getActivitySummary);
 
-// Get job analytics route
-router.get(
-  '/jobs/:jobId',
-  [
-    param('jobId').isMongoId().withMessage('Invalid job ID'),
-    validateRequest
-  ],
-  analyticsController.getJobAnalytics
-);
+// Source effectiveness
+router.get('/source-effectiveness', analyticsController.getSourceEffectiveness);
 
+// Export the router
 module.exports = router;

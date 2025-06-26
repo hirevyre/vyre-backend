@@ -95,6 +95,50 @@ router.get('/mongodb', async (req, res) => {
 });
 
 /**
+ * Check MongoDB connection status
+ */
+router.get('/mongodb-status', async (req, res) => {
+  try {
+    const dbState = [
+      { value: 0, label: "Disconnected", color: "red" },
+      { value: 1, label: "Connected", color: "green" },
+      { value: 2, label: "Connecting", color: "yellow" },
+      { value: 3, label: "Disconnecting", color: "yellow" }
+    ];
+    
+    const state = mongoose.connection.readyState;
+    const stateInfo = dbState.find(s => s.value === state);
+    
+    const dbStats = {
+      state: stateInfo.label,
+      status: stateInfo.value === 1 ? "healthy" : "unhealthy",
+      host: mongoose.connection.host || "Not connected",
+      name: mongoose.connection.name || "Not connected",
+      collections: mongoose.connection.collections ? Object.keys(mongoose.connection.collections).length : 0,
+      models: Object.keys(mongoose.models).length,
+      readyState: mongoose.connection.readyState,
+      nodeVersion: process.version,
+      sslEnabled: mongoose.connection.client?.options?.ssl || false,
+      tlsInsecure: mongoose.connection.client?.options?.tlsAllowInvalidCertificates || false,
+    };
+    
+    return res.status(200).json({
+      status: "success",
+      data: dbStats,
+      timestamp: new Date(),
+      uptime: process.uptime()
+    });
+  } catch (error) {
+    console.error("Error checking MongoDB status:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to check MongoDB status",
+      error: error.message
+    });
+  }
+});
+
+/**
  * Get system health
  * @route GET /health
  */
